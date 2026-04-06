@@ -6,6 +6,7 @@ import { OnboardingWizard } from "./components/OnboardingWizard";
 import { authApi } from "./api/auth";
 import { healthApi } from "./api/health";
 import { Dashboard } from "./pages/Dashboard";
+import { VirtualOffice } from "./pages/VirtualOffice";
 import { Companies } from "./pages/Companies";
 import { Agents } from "./pages/Agents";
 import { AgentDetail } from "./pages/AgentDetail";
@@ -121,7 +122,8 @@ function boardRoutes() {
   return (
     <>
       <Route index element={<Navigate to="dashboard" replace />} />
-      <Route path="dashboard" element={<Dashboard />} />
+      <Route path="dashboard" element={<VirtualOffice />} />
+      <Route path="dashboard/classic" element={<Dashboard />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

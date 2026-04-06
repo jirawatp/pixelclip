@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@fontsource/press-start-2p";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -794,3 +795,232 @@ a.paperclip-project-mention-chip {
 [class*="_toolbarNodeKindSelectContainer_"] {
   z-index: 81 !important;
 }
+
+/* =========================================================================
+   PIXEL-ART THEME UTILITIES
+   ========================================================================= */
+
+/* Pixel font */
+.pixel-font {
+  font-family: 'Press Start 2P', monospace;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  image-rendering: pixelated;
+}
+
+/* Pixel panel - retro OS window */
+.pixel-panel {
+  background: #1D2B53;
+  border: 3px solid #C2C3C7;
+  box-shadow:
+    inset 2px 2px 0 #5F574F,
+    inset -2px -2px 0 #000000,
+    4px 4px 0 rgba(0,0,0,0.3);
+  image-rendering: pixelated;
+}
+
+.pixel-panel-title {
+  background: linear-gradient(to right, #7E2553, #29ADFF);
+  padding: 4px 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #FFF1E8;
+  border-bottom: 2px solid #C2C3C7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+/* Pixel button */
+.pixel-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 6px 12px;
+  background: #5F574F;
+  color: #FFF1E8;
+  border: 2px solid #C2C3C7;
+  box-shadow:
+    inset 1px 1px 0 #83769C,
+    inset -1px -1px 0 #000000,
+    2px 2px 0 rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: none;
+  image-rendering: pixelated;
+}
+
+.pixel-btn:hover {
+  background: #83769C;
+}
+
+.pixel-btn:active {
+  box-shadow:
+    inset -1px -1px 0 #83769C,
+    inset 1px 1px 0 #000000;
+  transform: translate(1px, 1px);
+}
+
+.pixel-btn-primary {
+  background: #29ADFF;
+  color: #000000;
+}
+
+.pixel-btn-danger {
+  background: #FF004D;
+  color: #FFF1E8;
+}
+
+.pixel-btn-success {
+  background: #00E436;
+  color: #000000;
+}
+
+/* Pixel input */
+.pixel-input {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 4px 8px;
+  background: #000000;
+  color: #00E436;
+  border: 2px solid #5F574F;
+  box-shadow: inset 1px 1px 0 #1D2B53;
+  outline: none;
+}
+
+.pixel-input:focus {
+  border-color: #29ADFF;
+}
+
+/* Pixel progress bar */
+.pixel-progress {
+  height: 12px;
+  background: #000000;
+  border: 2px solid #5F574F;
+  box-shadow: inset 1px 1px 0 #1D2B53;
+  position: relative;
+  overflow: hidden;
+}
+
+.pixel-progress-fill {
+  height: 100%;
+  background: #00E436;
+  transition: width 0.3s steps(10);
+}
+
+.pixel-progress-fill.warning {
+  background: #FFA300;
+}
+
+.pixel-progress-fill.danger {
+  background: #FF004D;
+}
+
+/* Pixel badge */
+.pixel-badge {
+  display: inline-block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  padding: 2px 4px;
+  border: 1px solid #C2C3C7;
+  background: #5F574F;
+  color: #FFF1E8;
+}
+
+/* Pixel tooltip */
+.pixel-tooltip {
+  position: absolute;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  padding: 4px 6px;
+  background: #000000;
+  color: #FFF1E8;
+  border: 1px solid #C2C3C7;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+/* Pixel scrollbar */
+.pixel-scroll::-webkit-scrollbar {
+  width: 12px;
+}
+
+.pixel-scroll::-webkit-scrollbar-track {
+  background: #1D2B53;
+  border-left: 2px solid #5F574F;
+}
+
+.pixel-scroll::-webkit-scrollbar-thumb {
+  background: #5F574F;
+  border: 1px solid #C2C3C7;
+}
+
+.pixel-scroll::-webkit-scrollbar-thumb:hover {
+  background: #83769C;
+}
+
+/* Pixel terminal (for activity log) */
+.pixel-terminal {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  line-height: 1.8;
+  background: #000000;
+  color: #00E436;
+  padding: 8px;
+  border: 2px solid #5F574F;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Animations */
+@keyframes pixel-blink {
+  0%, 90% { opacity: 1; }
+  95% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes pixel-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes pixel-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pixel-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pixel-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+@keyframes pixel-slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes pixel-slide-in-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pixel-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pixel-animate-blink { animation: pixel-blink 3s infinite; }
+.pixel-animate-float { animation: pixel-float 2s ease-in-out infinite; }
+.pixel-animate-bounce { animation: pixel-bounce 0.5s ease-in-out; }
+.pixel-animate-pulse { animation: pixel-pulse 1.5s ease-in-out infinite; }
+.pixel-animate-shake { animation: pixel-shake 0.3s ease-in-out; }
+.pixel-animate-slide-right { animation: pixel-slide-in-right 0.3s steps(6) forwards; }
+.pixel-animate-slide-up { animation: pixel-slide-in-up 0.3s steps(6) forwards; }
+.pixel-animate-fade { animation: pixel-fade-in 0.5s ease forwards; }
