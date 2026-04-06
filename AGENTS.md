@@ -199,3 +199,98 @@ PR #2218 (`feat/external-adapter-phase1`) adds external adapter support. See roo
 - `createServerAdapter()` must include ALL optional fields (especially `detectModel`)
 - Built-in UI adapters can shadow external plugin parsers — remove built-in when fully externalizing
 - Reference external adapters: Hermes (`@henkey/hermes-paperclip-adapter` or `file:`) and Droid (npm)
+
+## 12. Pixelclip Fork — Pixel-Art Virtual Office
+
+This is a fork of `paperclipai/paperclip` that replaces the standard dashboard UI with a **2D pixel-art virtual office** where AI agents appear as pixel characters at desks.
+
+- **Repo**: `jirawatp/pixelclip`
+- **Branch**: `feat/pixel-art-virtual-office`
+- **Backend**: Unchanged from upstream Paperclip (all `server/`, `packages/`, `cli/` are identical)
+- **Frontend**: The `ui/` directory adds a pixel-art engine layer and component set; the original pages remain accessible
+
+## 13. Pixel-Art Architecture
+
+### Engine (`ui/src/engine/`)
+
+| File | Purpose |
+|------|---------|
+| `OfficeCanvas.tsx` | Main Canvas 2D renderer. Pan/zoom/click. Wrapped in `React.memo`. Render loop reads from refs to survive re-renders |
+| `OfficeLayout.ts` | Converts agent list → office floor plan. Rooms: CEO office, meeting room, managers area, open floor, break room, control room |
+| `ProceduralPixelArt.ts` | PICO-8 palette procedural sprite generator. Draws characters, furniture, speech/thought bubbles, status icons. **No external image assets** — everything is runtime-generated and cached |
+| `OfficeEventBridge.ts` | Maps WebSocket `LiveEvent` → `OfficeAnimation` queue (20+ animation types: working, thinking, sleeping, error, celebrating, task-assigned, heartbeat, etc.) |
+| `types.ts` | Shared types: `OfficeRoom`, `FurnitureItem`, `AgentCharacterState`, `CameraState`, `ClickTarget` |
+
+### Pixel UI Components (`ui/src/components/pixel/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `AgentDetailPanel.tsx` | Right sidebar: agent info, pixel avatar, budget bar, activity terminal, action buttons |
+| `OrgBoardModal.tsx` | Full org chart dashboard. Opens when clicking the org board object in the meeting room |
+| `TaskBoardModal.tsx` | Pixel kanban board with sticky-note cards. Opens when clicking the whiteboard |
+| `ControlRoomModal.tsx` | Stats dashboard with pixel meters and bar charts. Opens when clicking the big monitor |
+| `OfficeToolbar.tsx` | Floating top toolbar: company name, view toggle (Office/List), agent count badge |
+| `PixelPanel.tsx` | Reusable retro OS-style window component (title bar, close button, pixel borders) |
+| `PixelLoadingScreen.tsx` | Animated loading screen with pixel office building icon and progress bar |
+
+### Hooks (`ui/src/hooks/`)
+
+| Hook | Purpose |
+|------|---------|
+| `useOfficeAnimations` | Subscribes to the global `AnimationQueue`, drains expired animations, returns active animations per agent |
+| `useOfficeEventPipe` | Lightweight WebSocket bridge: connects to `/api/companies/{id}/events/ws`, parses events, feeds animation queue |
+
+### Routes
+
+| Path | Component | Notes |
+|------|-----------|-------|
+| `/:prefix/dashboard` | `VirtualOffice` | Pixel-art office (default) |
+| `/:prefix/dashboard/classic` | `Dashboard` | Original Paperclip dashboard |
+
+## 14. Pixel-Art Development Rules
+
+1. **No external image assets.** All sprites are procedural (`ProceduralPixelArt.ts`). Add new visuals by writing draw functions, not importing images.
+
+2. **PICO-8 palette only.** Use the 16-color palette via the `PICO8` constant. Do not introduce colors outside the palette.
+
+3. **Render loop pattern.** The Canvas render loop runs via `requestAnimationFrame` inside a `useEffect` with no dependency array. Layout and agent state are read from refs (`layoutRef`, `agentStatesRef`) to survive React re-renders and StrictMode double-invocation. **Do NOT use `useState` for data consumed by the render loop.**
+
+4. **Adding interactive objects.** A new clickable office object needs:
+   - (a) Draw function in `ProceduralPixelArt.ts`
+   - (b) Placement in `OfficeLayout.ts` with `interactive: true` and `interactionType`
+   - (c) Click handler in `OfficeCanvas.tsx` (world-coordinate hit test)
+   - (d) Modal or panel in `VirtualOffice.tsx`
+
+5. **Adding real-time animations.** New WebSocket events need:
+   - (a) Mapping in `OfficeEventBridge.ts` → `mapLiveEventToAnimations`
+   - (b) Visual handling in the `OfficeCanvas.tsx` render loop
+
+6. **Pixel theme CSS classes.** Use these from `ui/src/index.css`:
+   `.pixel-font`, `.pixel-panel`, `.pixel-panel-title`, `.pixel-btn`, `.pixel-btn-primary`, `.pixel-btn-danger`, `.pixel-btn-success`, `.pixel-input`, `.pixel-progress`, `.pixel-terminal`, `.pixel-badge`, `.pixel-tooltip`, `.pixel-scroll`
+
+## 15. GCP Infrastructure
+
+| Component | Detail |
+|-----------|--------|
+| GCP Project | `canvas-spark-419908` |
+| VM | `paperclip-server` (`e2-highmem-4`, `asia-southeast1-a`) |
+| SSH User | `jirawat_pattan_gmail_com` |
+| PostgreSQL | `localhost:5432` — user: `paperclip`, db: `paperclip` |
+| Ollama | `localhost:11434` (gemma3:27b) |
+| Paperclip | `localhost:3100` — systemd `paperclip.service` |
+| Cloudflare Tunnel | `paperclip-gcp` → `paperclip.jirawat.dev` |
+
+## 16. Local Dev with GCP Backend
+
+```sh
+# 1. SSH tunnel — forward Paperclip API from GCP VM to localhost
+gcloud compute ssh paperclip-server \
+  --zone=asia-southeast1-a \
+  --project=canvas-spark-419908 \
+  -- -L 3100:localhost:3100 -N -f
+
+# 2. Start pixel-art frontend (proxies /api to the tunnel)
+cd ui && pnpm dev   # → http://localhost:5173
+```
+
+The Vite proxy in `ui/vite.config.ts` forwards `/api` requests to `localhost:3100`.

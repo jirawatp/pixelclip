@@ -32,13 +32,19 @@ export function generateOfficeLayout(agents: AgentInfo[]): OfficeLayoutData {
   const ceo = agents.find(
     (a) => a.role?.toLowerCase() === "ceo" || a.role?.toLowerCase() === "founder",
   );
+  const managerRoles = new Set([
+    "manager", "lead", "director", "vp",
+    "cfo", "cto", "cmo", "coo", "cpo", "cro",
+    "svp", "evp", "head",
+    "pm", "devops", "qa", "general",
+  ]);
+  // Also treat "Head of..." agents as managers
+  // And anyone with a C-level name pattern
   const managers = agents.filter(
     (a) =>
       a.id !== ceo?.id &&
-      (a.role?.toLowerCase() === "manager" ||
-        a.role?.toLowerCase() === "lead" ||
-        a.role?.toLowerCase() === "director" ||
-        a.role?.toLowerCase() === "vp"),
+      (managerRoles.has(a.role?.toLowerCase() ?? "") ||
+        a.name?.toLowerCase().startsWith("head of")),
   );
   const workers = agents.filter(
     (a) => a.id !== ceo?.id && !managers.some((m) => m.id === a.id),
@@ -146,23 +152,28 @@ export function generateOfficeLayout(agents: AgentInfo[]): OfficeLayoutData {
   // --- Manager Area (below hallway, left side) ---
   const managerRowY = 9;
   if (managers.length > 0) {
+    const mgrPerRow = Math.min(6, managers.length);
+    const mgrRows = Math.ceil(managers.length / mgrPerRow);
     const managerRoom: OfficeRoom = {
       id: "manager-area",
       type: "open-floor",
       x: 0,
       y: managerRowY,
-      width: Math.max(8, managers.length * 4 + 2),
-      height: 6,
+      width: Math.max(8, mgrPerRow * 5 + 2),
+      height: Math.max(6, mgrRows * 5 + 2),
       label: "Managers",
       furniture: [],
     };
 
     managers.forEach((mgr, i) => {
-      const dx = 1 + i * 4;
+      const row = Math.floor(i / mgrPerRow);
+      const col = i % mgrPerRow;
+      const dx = 1 + col * 5;
+      const dy = 1 + row * 5;
       managerRoom.furniture.push(
-        { id: fid(), type: "desk", x: dx, y: 1, agentId: mgr.id, interactive: true, interactionType: "agent" },
-        { id: fid(), type: "chair", x: dx, y: 2, agentId: mgr.id },
-        { id: fid(), type: "plant", x: dx + 2, y: 1 },
+        { id: fid(), type: "desk", x: dx, y: dy, agentId: mgr.id, interactive: true, interactionType: "agent" },
+        { id: fid(), type: "chair", x: dx, y: dy + 1, agentId: mgr.id },
+        { id: fid(), type: "plant", x: dx + 2, y: dy },
       );
     });
 

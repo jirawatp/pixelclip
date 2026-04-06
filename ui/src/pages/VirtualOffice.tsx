@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCompany } from "@/context/CompanyContext";
 import { useNavigate } from "@/lib/router";
@@ -18,8 +18,6 @@ type ModalType = "org-board" | "whiteboard" | "filing-cabinet" | "control-room" 
 export function VirtualOffice() {
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [viewMode, setViewMode] = useState<"office" | "list">("office");
 
   const companyId = selectedCompany?.id ?? "";
@@ -29,6 +27,7 @@ export function VirtualOffice() {
     queryFn: () => agentsApi.list(companyId),
     enabled: !!companyId,
     refetchInterval: 15000,
+    placeholderData: (prev: any) => prev,
   });
 
   const issuesQuery = useQuery({
@@ -44,6 +43,9 @@ export function VirtualOffice() {
     enabled: !!companyId,
     refetchInterval: 30000,
   });
+
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [activeModal, setActiveModal] = useState<ModalType>(null);
 
   const handleAgentClick = useCallback((agentId: string) => {
     setSelectedAgentId(agentId);
@@ -77,11 +79,19 @@ export function VirtualOffice() {
     [navigate],
   );
 
-  const agents = agentsQuery.data ?? [];
+  // Keep a stable reference to agents — never let it go empty during refetch
+  const agentsRef = useRef<any[]>([]);
+  const rawAgents = agentsQuery.data ?? [];
+  if (rawAgents.length > 0) {
+    agentsRef.current = rawAgents;
+  }
+  const agents = agentsRef.current;
+
+  const isOffice = viewMode === "office";
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#1D2B53]">
-      {/* Toolbar */}
+      {/* Toolbar — always visible */}
       <OfficeToolbar
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -89,17 +99,22 @@ export function VirtualOffice() {
         agentCount={agents.length}
       />
 
-      {/* Main office canvas */}
-      {viewMode === "office" ? (
-        <OfficeCanvas
-          agents={agents}
-          onAgentClick={handleAgentClick}
-          onObjectClick={handleObjectClick}
-          className="h-full w-full"
-        />
-      ) : (
-        <div className="h-full w-full overflow-auto p-4">
-          {/* Fallback list view - pixel styled */}
+      {/*
+       * CRITICAL: OfficeCanvas is ALWAYS rendered (never conditionally mounted).
+       * When in list mode, it's hidden via CSS but the renderer keeps its state.
+       * This prevents React from destroying/recreating the canvas on re-renders.
+       */}
+      <OfficeCanvas
+        agents={agents}
+        onAgentClick={handleAgentClick}
+        onObjectClick={handleObjectClick}
+        className="h-full w-full"
+        visible={isOffice}
+      />
+
+      {/* List view — shown on top when in list mode */}
+      {!isOffice && (
+        <div className="absolute inset-0 h-full w-full overflow-auto p-4" style={{ top: 40 }}>
           <div className="pixel-panel mx-auto max-w-4xl">
             <div className="pixel-panel-title">Agents</div>
             <div className="space-y-2 p-4">
@@ -122,7 +137,7 @@ export function VirtualOffice() {
         </div>
       )}
 
-      {/* Agent detail side panel */}
+      {/* Agent detail side panel — absolutely positioned, never affects canvas layout */}
       {selectedAgentId && (
         <AgentDetailPanel
           agentId={selectedAgentId}
@@ -132,7 +147,7 @@ export function VirtualOffice() {
         />
       )}
 
-      {/* Modals for interactive objects */}
+      {/* Modals for interactive objects — overlays, never affect canvas layout */}
       {activeModal === "org-board" && (
         <OrgBoardModal
           companyId={companyId}
