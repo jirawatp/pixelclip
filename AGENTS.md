@@ -211,15 +211,14 @@ This is a fork of `paperclipai/paperclip` that replaces the standard dashboard U
 
 ## 13. Pixel-Art Architecture
 
-### Engine (`ui/src/engine/`)
+### Engine (`ui/src/components/office-view/`)
 
 | File | Purpose |
 |------|---------|
-| `OfficeCanvas.tsx` | Main Canvas 2D renderer. Pan/zoom/click. Wrapped in `React.memo`. Render loop reads from refs to survive re-renders |
-| `OfficeLayout.ts` | Converts agent list → office floor plan. Rooms: CEO office, meeting room, managers area, open floor, break room, control room |
-| `ProceduralPixelArt.ts` | PICO-8 palette procedural sprite generator. Draws characters, furniture, speech/thought bubbles, status icons. **No external image assets** — everything is runtime-generated and cached |
-| `OfficeEventBridge.ts` | Maps WebSocket `LiveEvent` → `OfficeAnimation` queue (20+ animation types: working, thinking, sleeping, error, celebrating, task-assigned, heartbeat, etc.) |
-| `types.ts` | Shared types: `OfficeRoom`, `FurnitureItem`, `AgentCharacterState`, `CameraState`, `ClickTarget` |
+| `OfficeView.tsx` | Main Pixi.js renderer boundary. Extracted from Claw Empire, handles canvas mounting and React prop delegation. |
+| `useOfficePixiRuntime.ts` | The Pixi `Application` lifecycle manager and render loop ticker. Loads sprites dynamically. |
+| `buildScene*.ts` | Scene generation logic handling room creation, furniture placement, and character sprite rendering. |
+| `themes-locale.ts` | Palettes and localizations for the Pixi rendering engine (CEO office, Break Room colors, etc). |
 
 ### Pixel UI Components (`ui/src/components/pixel/`)
 
@@ -231,7 +230,6 @@ This is a fork of `paperclipai/paperclip` that replaces the standard dashboard U
 | `ControlRoomModal.tsx` | Stats dashboard with pixel meters and bar charts. Opens when clicking the big monitor |
 | `OfficeToolbar.tsx` | Floating top toolbar: company name, view toggle (Office/List), agent count badge |
 | `PixelPanel.tsx` | Reusable retro OS-style window component (title bar, close button, pixel borders) |
-| `PixelLoadingScreen.tsx` | Animated loading screen with pixel office building icon and progress bar |
 
 ### Hooks (`ui/src/hooks/`)
 
@@ -249,23 +247,11 @@ This is a fork of `paperclipai/paperclip` that replaces the standard dashboard U
 
 ## 14. Pixel-Art Development Rules
 
-1. **No external image assets.** All sprites are procedural (`ProceduralPixelArt.ts`). Add new visuals by writing draw functions, not importing images.
-
-2. **PICO-8 palette only.** Use the 16-color palette via the `PICO8` constant. Do not introduce colors outside the palette.
-
-3. **Render loop pattern.** The Canvas render loop runs via `requestAnimationFrame` inside a `useEffect` with no dependency array. Layout and agent state are read from refs (`layoutRef`, `agentStatesRef`) to survive React re-renders and StrictMode double-invocation. **Do NOT use `useState` for data consumed by the render loop.**
-
-4. **Adding interactive objects.** A new clickable office object needs:
-   - (a) Draw function in `ProceduralPixelArt.ts`
-   - (b) Placement in `OfficeLayout.ts` with `interactive: true` and `interactionType`
-   - (c) Click handler in `OfficeCanvas.tsx` (world-coordinate hit test)
-   - (d) Modal or panel in `VirtualOffice.tsx`
-
-5. **Adding real-time animations.** New WebSocket events need:
-   - (a) Mapping in `OfficeEventBridge.ts` → `mapLiveEventToAnimations`
-   - (b) Visual handling in the `OfficeCanvas.tsx` render loop
-
-6. **Pixel theme CSS classes.** Use these from `ui/src/index.css`:
+1. **Static Sprites from Public.** We use the Metrocity character pack located in `ui/public/sprites/`. Characters are mapped to sprites securely through `AgentAvatar.ts`.
+2. **Procedural Geometry for Environment.** Most of the environment layout (desks, whiteboards, plants) runs on `Graphics` path operations through `drawing-core.ts` and `drawing-furniture.ts`.
+3. **PICO-8 UI palette.** Use the 16-color palette via the `PICO8` constant in `ProceduralPixelArt.ts` for React UI modals. 
+4. **Stable References for Pixi Props.** Use `useMemo` for inline array props passed directly to `OfficeView` in React or the `tickerContext` will thrash and cause the Canvas to constantly rebuild and flicker.
+5. **Pixel theme CSS classes.** Use these from `ui/src/index.css`:
    `.pixel-font`, `.pixel-panel`, `.pixel-panel-title`, `.pixel-btn`, `.pixel-btn-primary`, `.pixel-btn-danger`, `.pixel-btn-success`, `.pixel-input`, `.pixel-progress`, `.pixel-terminal`, `.pixel-badge`, `.pixel-tooltip`, `.pixel-scroll`
 
 ## 15. GCP Infrastructure

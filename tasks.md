@@ -42,6 +42,19 @@ Last updated: 2026-04-06
 
 ---
 
+## Phase 2: Gather.town Style RPG Rewrite
+- [ ] Implement `InputManager` for WASD/Arrow key tracking
+- [ ] Add `Player` entity to `OfficeRenderer` state (position, state, orientation)
+- [ ] Add `drawPlayerAvatar` to `ProceduralPixelArt.ts` (4 directions, walking animation frames)
+- [ ] Update `OfficeRenderer` camera to lock onto the player coordinates
+- [ ] Implement collision detection map (walls, desks, edges)
+- [ ] Implement Z-sorting (draw floor first, then sort player/agents/furniture by Y-coordinate)
+- [ ] Add Proximity system (calculate distance to agents/objects, highlight closest)
+- [ ] Bind 'Space' to trigger `onObjectClick` / `onAgentClick` for the closest highlighted interaction target
+- [ ] Add a visual interaction prompt (e.g., "[ SPACE ]") floating above highlighted objects
+
+---
+
 ## Pending — Features
 
 ### Agent Animations (real-time)

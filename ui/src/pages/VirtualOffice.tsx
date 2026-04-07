@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCompany } from "@/context/CompanyContext";
 import { useNavigate } from "@/lib/router";
@@ -10,7 +10,7 @@ import { AgentDetailPanel } from "@/components/pixel/AgentDetailPanel";
 import { OrgBoardModal } from "@/components/pixel/OrgBoardModal";
 import { TaskBoardModal } from "@/components/pixel/TaskBoardModal";
 import { ControlRoomModal } from "@/components/pixel/ControlRoomModal";
-import { OfficeCanvas } from "@/engine/OfficeCanvas";
+import OfficeView from "@/components/office-view/OfficeView";
 import { OfficeToolbar } from "@/components/pixel/OfficeToolbar";
 
 type ModalType = "org-board" | "whiteboard" | "filing-cabinet" | "control-room" | null;
@@ -89,6 +89,14 @@ export function VirtualOffice() {
 
   const isOffice = viewMode === "office";
 
+  // Stabilize props to prevent Pixi re-building scene and flickering
+  const mockDepartments = useMemo(() => [{ id: "hq", name: "Headquarters", row_index: 0, order_index: 0 }], []);
+  const hqAgents = useMemo(() => agents.map((a: any) => ({ ...a, department_id: "hq" })), [agents]);
+  const emptyTasks = useMemo(() => [], []);
+  const emptySubAgents = useMemo(() => [], []);
+  const emptyMeetingPresence = useMemo(() => [], []);
+  const unreadAgentIds = useMemo(() => new Set<string>(), []);
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#1D2B53]">
       {/* Toolbar — always visible */}
@@ -100,17 +108,33 @@ export function VirtualOffice() {
       />
 
       {/*
-       * CRITICAL: OfficeCanvas is ALWAYS rendered (never conditionally mounted).
+       * CRITICAL: OfficeView is ALWAYS rendered (never conditionally mounted).
        * When in list mode, it's hidden via CSS but the renderer keeps its state.
        * This prevents React from destroying/recreating the canvas on re-renders.
        */}
-      <OfficeCanvas
-        agents={agents}
-        onAgentClick={handleAgentClick}
-        onObjectClick={handleObjectClick}
-        className="h-full w-full"
-        visible={isOffice}
-      />
+      <div 
+        className="absolute inset-0 h-full w-full"
+        style={{
+          visibility: isOffice ? "visible" : "hidden",
+          pointerEvents: isOffice ? "auto" : "none",
+        }}
+      >
+        <OfficeView
+          departments={mockDepartments}
+          agents={hqAgents}
+          tasks={emptyTasks}
+          subAgents={emptySubAgents}
+          meetingPresence={emptyMeetingPresence}
+          activeMeetingTaskId={null}
+          unreadAgentIds={unreadAgentIds}
+          crossDeptDeliveries={emptyTasks}
+          onCrossDeptDeliveryProcessed={() => {}}
+          ceoOfficeCalls={emptyTasks}
+          onCeoOfficeCallProcessed={() => {}}
+          onSelectAgent={handleAgentClick}
+          onSelectDepartment={() => {}}
+        />
+      </div>
 
       {/* List view — shown on top when in list mode */}
       {!isOffice && (
