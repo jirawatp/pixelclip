@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useCompany } from "@/context/CompanyContext";
 import { useDialog } from "@/context/DialogContext";
 import { useNavigate } from "@/lib/router";
@@ -13,6 +13,7 @@ import { TaskBoardModal } from "@/components/pixel/TaskBoardModal";
 import { ControlRoomModal } from "@/components/pixel/ControlRoomModal";
 import OfficeView from "@/components/office-view/OfficeView";
 import { OfficeToolbar } from "@/components/pixel/OfficeToolbar";
+import { sfxClick, sfxOpen, sfxClose } from "@/engine/PixelAudio";
 
 type ModalType = "org-board" | "whiteboard" | "filing-cabinet" | "control-room" | null;
 
@@ -29,7 +30,7 @@ export function VirtualOffice() {
     queryFn: () => agentsApi.list(companyId),
     enabled: !!companyId,
     refetchInterval: 15000,
-    placeholderData: (prev: any) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const issuesQuery = useQuery({
@@ -48,22 +49,34 @@ export function VirtualOffice() {
 
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  
+  // Real tasks mapped from issuesQuery
+  const liveTasks = useMemo(() => issuesQuery.data ?? [], [issuesQuery.data]);
 
-  const handleAgentClick = useCallback((agentId: string) => {
-    setSelectedAgentId(agentId);
-    setActiveModal(null);
+  const handleAgentClick = useCallback((agentOrId: any) => {
+    sfxClick();
+    // OfficeView passes a full Agent object; list view passes a string id
+    const id = typeof agentOrId === "string" ? agentOrId : agentOrId?.id;
+    if (id) {
+      setSelectedAgentId(id);
+      setActiveModal(null);
+    }
   }, []);
 
   const handleObjectClick = useCallback((objectType: string) => {
+    console.log("[REACT] handleObjectClick received:", objectType);
+    sfxOpen();
     setActiveModal(objectType as ModalType);
     setSelectedAgentId(null);
   }, []);
 
   const handleClosePanel = useCallback(() => {
+    sfxClose();
     setSelectedAgentId(null);
   }, []);
 
   const handleCloseModal = useCallback(() => {
+    sfxClose();
     setActiveModal(null);
   }, []);
 
@@ -100,7 +113,7 @@ export function VirtualOffice() {
   const unreadAgentIds = useMemo(() => new Set<string>(), []);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#1D2B53]">
+    <div className="relative h-full w-full overflow-auto bg-[#1D2B53]">
       {/* Toolbar — always visible */}
       <OfficeToolbar
         viewMode={viewMode}
@@ -124,7 +137,7 @@ export function VirtualOffice() {
         <OfficeView
           departments={mockDepartments}
           agents={hqAgents}
-          tasks={emptyTasks}
+          tasks={liveTasks}
           subAgents={emptySubAgents}
           meetingPresence={emptyMeetingPresence}
           activeMeetingTaskId={null}
@@ -135,6 +148,7 @@ export function VirtualOffice() {
           onCeoOfficeCallProcessed={() => {}}
           onSelectAgent={handleAgentClick}
           onSelectDepartment={() => {}}
+          onInteractObject={handleObjectClick}
         />
       </div>
 

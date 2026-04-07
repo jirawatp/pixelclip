@@ -52,6 +52,7 @@ export default function OfficeView({
   themeHighlightTargetId,
   onSelectAgent,
   onSelectDepartment,
+  onInteractObject,
 }: OfficeViewProps) {
   const { language, t } = useI18n();
   const { theme: currentTheme } = useTheme();
@@ -126,16 +127,18 @@ export default function OfficeView({
   const breakBubblesRef = useRef<Container[]>([]);
   const wallClocksRef = useRef<WallClockVisual[]>([]);
   const wallClockSecondRef = useRef(-1);
+  const dayNightOverlayRef = useRef<Graphics | null>(null);
   const localeRef = useRef<SupportedLocale>(language);
   localeRef.current = language;
   const themeHighlightTargetIdRef = useRef<string | null>(themeHighlightTargetId ?? null);
   themeHighlightTargetIdRef.current = themeHighlightTargetId ?? null;
+  const interactablesRef = useRef<Array<{ x: number; y: number; radius: number; onInteract: () => void }>>([]);
 
   // Latest data via refs (avoids stale closures)
   const dataRef = useRef({ departments, agents, tasks, subAgents, unreadAgentIds, meetingPresence, customDeptThemes });
   dataRef.current = { departments, agents, tasks, subAgents, unreadAgentIds, meetingPresence, customDeptThemes };
-  const cbRef = useRef({ onSelectAgent, onSelectDepartment });
-  cbRef.current = { onSelectAgent, onSelectDepartment };
+  const cbRef = useRef({ onSelectAgent, onSelectDepartment, onInteractObject: onInteractObject ?? (() => {}) });
+  cbRef.current = { onSelectAgent, onSelectDepartment, onInteractObject: onInteractObject ?? (() => {}) };
   const activeMeetingTaskIdRef = useRef<string | null>(activeMeetingTaskId ?? null);
   activeMeetingTaskIdRef.current = activeMeetingTaskId ?? null;
   const meetingMinutesOpenRef = useRef<typeof onOpenActiveMeetingMinutes>(onOpenActiveMeetingMinutes);
@@ -149,6 +152,16 @@ export default function OfficeView({
   const triggerDepartmentInteract = useCallback(() => {
     const cx = ceoPosRef.current.x;
     const cy = ceoPosRef.current.y;
+    for (const item of interactablesRef.current) {
+      const dx = cx - item.x;
+      const dy = cy - item.y;
+      if (Math.sqrt(dx * dx + dy * dy) <= item.radius) {
+        item.onInteract();
+        return;
+      }
+    }
+    
+    // Fallback to department interaction
     for (const r of roomRectsRef.current) {
       if (cx >= r.x && cx <= r.x + r.w && cy >= r.y - 10 && cy <= r.y + r.h) {
         cbRef.current.onSelectDepartment(r.dept);
@@ -291,6 +304,8 @@ export default function OfficeView({
       wallClocksRef,
       wallClockSecondRef,
       setSceneRevision,
+      dayNightOverlayRef,
+      interactablesRef,
     });
   }, []);
 
@@ -322,6 +337,7 @@ export default function OfficeView({
       totalHRef,
       dataRef,
       followCeoInView,
+      dayNightOverlayRef,
     }),
     [followCeoInView, cliUsageRef],
   );

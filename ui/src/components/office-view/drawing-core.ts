@@ -2,6 +2,7 @@
 import { Container, Graphics } from "pixi.js";
 import { OFFICE_PASTEL } from "./themes-locale";
 import { TILE, type WallClockVisual } from "./model";
+import { getSmoothedPhaseConfig } from "@/engine/DayNightCycle";
 
 function hashStr(s: string): number {
   let h = 0;
@@ -162,29 +163,45 @@ function drawAmbientGlow(
   return g;
 }
 
-/** Draw a small window on the wall with warm sunlight filter and curtains */
+/** Draw a small window on the wall with time-based sky colors and curtains */
 function drawWindow(parent: Container, x: number, y: number, w: number = 24, h: number = 18) {
+  const phase = getSmoothedPhaseConfig();
   const g = new Graphics();
   // Outer frame shadow
   g.roundRect(x + 1.5, y + 1.5, w, h, 2).fill({ color: 0x000000, alpha: 0.12 });
   // Frame (warmer wood-tone)
   g.roundRect(x, y, w, h, 2).fill(0x8a7a68);
   g.roundRect(x, y, w, h, 2).stroke({ width: 0.5, color: 0xa09080, alpha: 0.4 });
-  // Glass panes (warm sky gradient tones)
+  // Glass panes (time-based sky colors)
   const pw = (w - 5) / 2,
     ph = (h - 5) / 2;
-  g.rect(x + 2, y + 2, pw, ph).fill(0x8abcdd);
-  g.rect(x + pw + 3, y + 2, pw, ph).fill(0x9accee);
-  g.rect(x + 2, y + ph + 3, pw, ph).fill(0x9accee);
-  g.rect(x + pw + 3, y + ph + 3, pw, ph).fill(0x8abcdd);
-  // Cloud silhouettes (more puffy)
-  g.circle(x + 6, y + 5, 1.5).fill({ color: 0xffffff, alpha: 0.2 });
-  g.circle(x + 8, y + 5.5, 2.2).fill({ color: 0xffffff, alpha: 0.18 });
-  g.circle(x + 10, y + 5.8, 1.8).fill({ color: 0xffffff, alpha: 0.16 });
-  g.circle(x + w - 7, y + h - 7, 1.5).fill({ color: 0xffffff, alpha: 0.14 });
-  g.circle(x + w - 9, y + h - 6.5, 1.8).fill({ color: 0xffffff, alpha: 0.12 });
-  // Warm sunlight overlay on glass
-  g.rect(x + 2, y + 2, w - 4, h - 4).fill({ color: 0xffe8a0, alpha: 0.1 });
+  g.rect(x + 2, y + 2, pw, ph).fill(phase.skyColor);
+  g.rect(x + pw + 3, y + 2, pw, ph).fill(phase.skyColorAlt);
+  g.rect(x + 2, y + ph + 3, pw, ph).fill(phase.skyColorAlt);
+  g.rect(x + pw + 3, y + ph + 3, pw, ph).fill(phase.skyColor);
+  // Stars (night only)
+  if (phase.showStars) {
+    const starPositions = [
+      [x + 5, y + 4], [x + 9, y + 6], [x + 14, y + 3],
+      [x + 7, y + 8], [x + 16, y + 7], [x + 12, y + 10],
+    ];
+    for (const [sx, sy] of starPositions) {
+      g.circle(sx, sy, 0.4).fill({ color: 0xffffff, alpha: 0.5 + Math.random() * 0.3 });
+    }
+    // Moon
+    g.circle(x + w - 6, y + 4, 2).fill({ color: 0xffffdd, alpha: 0.6 });
+    g.circle(x + w - 5, y + 3.5, 1.8).fill(phase.skyColor); // crescent
+  }
+  // Cloud silhouettes (visibility from phase)
+  if (phase.cloudAlpha > 0.01) {
+    g.circle(x + 6, y + 5, 1.5).fill({ color: 0xffffff, alpha: phase.cloudAlpha });
+    g.circle(x + 8, y + 5.5, 2.2).fill({ color: 0xffffff, alpha: phase.cloudAlpha * 0.9 });
+    g.circle(x + 10, y + 5.8, 1.8).fill({ color: 0xffffff, alpha: phase.cloudAlpha * 0.8 });
+    g.circle(x + w - 7, y + h - 7, 1.5).fill({ color: 0xffffff, alpha: phase.cloudAlpha * 0.7 });
+    g.circle(x + w - 9, y + h - 6.5, 1.8).fill({ color: 0xffffff, alpha: phase.cloudAlpha * 0.6 });
+  }
+  // Sunlight overlay on glass
+  g.rect(x + 2, y + 2, w - 4, h - 4).fill({ color: phase.sunlightColor, alpha: phase.sunlightAlpha });
   // Grid bars (wooden mullions)
   g.rect(x + w / 2 - 0.6, y + 2, 1.2, h - 4).fill({ color: 0x7a6a58, alpha: 0.4 });
   g.rect(x + 2, y + h / 2 - 0.5, w - 4, 1).fill({ color: 0x7a6a58, alpha: 0.35 });
@@ -210,19 +227,19 @@ function drawWindow(parent: Container, x: number, y: number, w: number = 24, h: 
   g.circle(x + w / 2, y + h - 1, 2).fill(0x7cb898);
   g.circle(x + w / 2 - 1, y + h - 2, 1.5).fill(0x92c8aa);
   g.roundRect(x + w / 2 - 1.5, y + h, 3, 2, 0.5).fill(0xd88060);
-  // Sunlight beam cast below window (warm ambient glow on floor)
+  // Sunlight beam cast below window
   g.moveTo(x, y + h + 3)
     .lineTo(x + w, y + h + 3)
     .lineTo(x + w + 8, y + h + 22)
     .lineTo(x - 8, y + h + 22)
-    .fill({ color: 0xffeebb, alpha: 0.05 });
+    .fill({ color: phase.sunlightColor, alpha: phase.sunlightAlpha * 0.6 });
   g.moveTo(x + 2, y + h + 5)
     .lineTo(x + w - 2, y + h + 5)
     .lineTo(x + w + 4, y + h + 16)
     .lineTo(x - 4, y + h + 16)
-    .fill({ color: 0xffeebb, alpha: 0.03 });
-  // Warm sunlight streaming through window
-  g.rect(x + 1, y + h + 3, w - 2, 12).fill({ color: 0xfff4d0, alpha: 0.05 });
+    .fill({ color: phase.sunlightColor, alpha: phase.sunlightAlpha * 0.4 });
+  // Sunlight streaming through window
+  g.rect(x + 1, y + h + 3, w - 2, 12).fill({ color: phase.sunlightColor, alpha: phase.sunlightAlpha * 0.5 });
   parent.addChild(g);
   return g;
 }
@@ -353,6 +370,28 @@ function drawWaterCooler(parent: Container, x: number, y: number) {
   return g;
 }
 
+/** Draw a full-screen ambient tint overlay for day/night cycle */
+function drawDayNightOverlay(parent: Container, w: number, h: number): Graphics {
+  const phase = getSmoothedPhaseConfig();
+  const overlay = new Graphics();
+  overlay.eventMode = "none";          // purely visual — never intercept pointer events
+  overlay.interactiveChildren = false; // skip hit-testing children too
+  if (phase.ambientAlpha > 0.001) {
+    overlay.rect(0, 0, w, h).fill({ color: phase.ambientTint, alpha: phase.ambientAlpha });
+  }
+  parent.addChild(overlay);
+  return overlay;
+}
+
+/** Lightweight per-frame update: refresh the ambient overlay tint without rebuilding scene */
+function updateDayNightOverlay(overlay: Graphics, w: number, h: number): void {
+  const phase = getSmoothedPhaseConfig();
+  overlay.clear();
+  if (phase.ambientAlpha > 0.001) {
+    overlay.rect(0, 0, w, h).fill({ color: phase.ambientTint, alpha: phase.ambientAlpha });
+  }
+}
+
 export {
   hashStr,
   blendColor,
@@ -371,4 +410,6 @@ export {
   drawCeilingLight,
   drawTrashCan,
   drawWaterCooler,
+  drawDayNightOverlay,
+  updateDayNightOverlay,
 };

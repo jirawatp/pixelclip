@@ -94,6 +94,8 @@ export function useOfficePixiRuntime({
       }
 
       appRef.current = app;
+      app.stage.eventMode = "static";  // enable event propagation to interactive children
+      (window as any).PIXI_APP = app; // DEBUG EXPOSE
       const canvas = app.canvas as HTMLCanvasElement;
       canvas.style.imageRendering = "pixelated";
       element.innerHTML = "";

@@ -18,6 +18,7 @@ import {
 } from "./drawing-core";
 import { drawChair, drawPlant } from "./drawing-furniture-a";
 import { formatPeopleCount, formatTaskCount } from "./drawing-furniture-b";
+import { addTooltip, makeInteractive } from "./tooltip";
 
 interface BuildCeoAndHallwayParams {
   app: Application;
@@ -34,7 +35,8 @@ interface BuildCeoAndHallwayParams {
   deliveriesRef: MutableRefObject<Delivery[]>;
   ceoMeetingSeatsRef: MutableRefObject<Array<{ x: number; y: number }>>;
   wallClocksRef: MutableRefObject<WallClockVisual[]>;
-  ceoOfficeRectRef: MutableRefObject<{ x: number; y: number; w: number; h: number } | null>;
+  cbRef: MutableRefObject<CallbackSnapshot>;
+  interactablesRef: MutableRefObject<Array<{ x: number; y: number; radius: number; onInteract: () => void }>>;
 }
 
 export function buildCeoAndHallway({
@@ -53,6 +55,8 @@ export function buildCeoAndHallway({
   ceoMeetingSeatsRef,
   wallClocksRef,
   ceoOfficeRectRef,
+  cbRef,
+  interactablesRef,
 }: BuildCeoAndHallwayParams): void {
   const bg = new Graphics();
   const bgFill = isDark ? 0x0e0e1c : 0xf5f0e8;
@@ -138,6 +142,21 @@ export function buildCeoAndHallway({
   ceoPlateText.anchor.set(0.5, 0.5);
   ceoPlateText.position.set(cdx + 32, cdy + 27.5);
   ceoLayer.addChild(ceoPlateText);
+
+  // Make the Board desk interactive -> Org Board
+  makeInteractive(
+    cdg,
+    "🏢 Org Board",
+    "View Company Structure",
+    () => cbRef.current.onInteractObject("org-board"),
+    0xcc4444,
+  );
+  interactablesRef.current.push({
+    x: cdx + 32,
+    y: cdy + 17,
+    radius: 50,
+    onInteract: () => cbRef.current.onInteractObject("org-board"),
+  });
   drawChair(ceoLayer, cdx + 32, cdy + 46, 0xd4a860);
 
   const mtW = 220;
@@ -234,17 +253,21 @@ export function buildCeoAndHallway({
       val: `${doneCount}/${tasks.length}`,
     },
   ];
+  const statsContainer = new Container();
+  ceoLayer.addChild(statsContainer);
+
+  const statsMap = new Graphics();
+  // We'll draw all stat cards here directly
+  let firstSx = OFFICE_W - 340;
   stats.forEach((stat, index) => {
     const sx = OFFICE_W - 340 + index * 82;
     const sy = 12;
-    const statCard = new Graphics();
-    statCard.roundRect(sx, sy, 74, 26, 4).fill({ color: 0xfff4d8, alpha: 0.85 });
-    statCard.roundRect(sx, sy, 74, 26, 4).stroke({ width: 1, color: 0xe8c870, alpha: 0.5 });
-    ceoLayer.addChild(statCard);
+    statsMap.roundRect(sx, sy, 74, 26, 4).fill({ color: 0xfff4d8, alpha: 0.85 });
+    statsMap.roundRect(sx, sy, 74, 26, 4).stroke({ width: 1, color: 0xe8c870, alpha: 0.5 });
     const iconText = new Text({ text: stat.icon, style: new TextStyle({ fontSize: 10 }) });
     iconText.position.set(sx + 4, sy + 4);
-    ceoLayer.addChild(iconText);
-    ceoLayer.addChild(
+    statsContainer.addChild(iconText);
+    statsContainer.addChild(
       Object.assign(
         new Text({
           text: stat.label,
@@ -253,7 +276,7 @@ export function buildCeoAndHallway({
         { x: sx + 18, y: sy + 2 },
       ),
     );
-    ceoLayer.addChild(
+    statsContainer.addChild(
       Object.assign(
         new Text({
           text: stat.val,
@@ -262,6 +285,23 @@ export function buildCeoAndHallway({
         { x: sx + 18, y: sy + 13 },
       ),
     );
+  });
+  statsContainer.addChildAt(statsMap, 0);
+
+  // Make stats area interactive -> Control Room
+  makeInteractive(
+    statsMap,
+    "📊 Control Room",
+    "View Company Dashboards",
+    () => cbRef.current.onInteractObject("control-room"),
+    0x44cc88,
+  );
+  
+  interactablesRef.current.push({
+    x: OFFICE_W - 170, // Rough center x of the stats blocks
+    y: 25,
+    radius: 180, // Very large hit radius so they can press Enter while standing under the monitors
+    onInteract: () => cbRef.current.onInteractObject("control-room"),
   });
 
   const hint = new Text({
@@ -294,7 +334,8 @@ export function buildCeoAndHallway({
   drawAmbientGlow(ceoLayer, OFFICE_W / 2, CEO_ZONE_H / 2, OFFICE_W * 0.35, ceoTheme.accent, 0.08);
   drawPlant(ceoLayer, 18, 62, 0);
   drawPlant(ceoLayer, OFFICE_W - 22, 62, 2);
-  drawWaterCooler(ceoLayer, 28, 30);
+  const cooler = drawWaterCooler(ceoLayer, 28, 30);
+  addTooltip(cooler, "💧 Water Cooler", "Stay hydrated!", { accentColor: 0x44ccff });
 
   ceoLayer.addChild(ceoLabelBg);
   ceoLayer.addChild(ceoLabel);

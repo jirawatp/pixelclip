@@ -22,6 +22,7 @@ import {
 } from "./drawing-core";
 import { drawPlant } from "./drawing-furniture-a";
 import { drawCoffeeMachine, drawCoffeeTable, drawHighTable, drawSofa, drawVendingMachine } from "./drawing-furniture-b";
+import { addTooltip } from "./tooltip";
 
 interface BuildBreakRoomParams {
   app: Application;
@@ -96,12 +97,21 @@ export function buildBreakRoom({
 
   const furnitureBaseX = brx + 16;
   drawCoffeeMachine(breakRoom, furnitureBaseX, bry + 20);
+  const cmGraphics = breakRoom.children[breakRoom.children.length - 1];
+  if (cmGraphics) addTooltip(cmGraphics as Graphics, "☕ Coffee Machine", "Fuel for productivity", { accentColor: 0xd88060 });
+
   drawPlant(breakRoom, furnitureBaseX + 30, bry + 38, 1);
   drawSofa(breakRoom, furnitureBaseX + 50, bry + 56, 0xc89da6);
+  const sofa1 = breakRoom.children[breakRoom.children.length - 1];
+  if (sofa1) addTooltip(sofa1 as Graphics, "🛋️ Comfy Sofa", "Rest and recharge", { accentColor: 0xc89da6 });
+
   drawCoffeeTable(breakRoom, furnitureBaseX + 140, bry + 58);
 
   const furnitureRightX = brx + brw - 16;
   drawVendingMachine(breakRoom, furnitureRightX - 26, bry + 20);
+  const vmGraphics = breakRoom.children[breakRoom.children.length - 1];
+  if (vmGraphics) addTooltip(vmGraphics as Graphics, "🥤 Vending Machine", "Snacks and drinks", { accentColor: 0x88eeff });
+
   drawPlant(breakRoom, furnitureRightX - 36, bry + 38, 2);
   drawSofa(breakRoom, furnitureRightX - 120, bry + 56, 0x91bcae);
   drawHighTable(breakRoom, furnitureRightX - 170, bry + 24);

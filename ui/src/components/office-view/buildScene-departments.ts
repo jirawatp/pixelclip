@@ -34,6 +34,7 @@ import {
 import { drawChair, drawDesk, drawPlant, drawWhiteboard } from "./drawing-furniture-a";
 import { drawBookshelf } from "./drawing-furniture-b";
 import { renderDeskAgentAndSubClones } from "./buildScene-department-agent";
+import { addTooltip, makeInteractive } from "./tooltip";
 
 interface BuildDepartmentRoomsParams {
   app: Application;
@@ -63,6 +64,7 @@ interface BuildDepartmentRoomsParams {
   removedSubBurstsByParent: Map<string, Array<{ x: number; y: number }>>;
   addedWorkingSubIds: Set<string>;
   nextSubSnapshot: Map<string, { parentAgentId: string; x: number; y: number }>;
+  interactablesRef: MutableRefObject<Array<{ x: number; y: number; radius: number; onInteract: () => void }>>;
 }
 
 export function buildDepartmentRooms({
@@ -93,6 +95,7 @@ export function buildDepartmentRooms({
   removedSubBurstsByParent,
   addedWorkingSubIds,
   nextSubSnapshot,
+  interactablesRef,
 }: BuildDepartmentRoomsParams): void {
   departments.forEach((dept, deptIdx) => {
     const col = deptIdx % gridCols;
@@ -140,7 +143,7 @@ export function buildDepartmentRooms({
     signTxt.position.set(rx + roomW / 2, ry + 5);
     room.addChild(signTxt);
 
-    drawCeilingAndDecor(room, rx, ry, roomW, roomH, theme, deptIdx, wallClocksRef);
+    drawCeilingAndDecor(room, rx, ry, roomW, roomH, theme, deptIdx, wallClocksRef, cbRef, interactablesRef);
 
     if (deptAgents.length > 0) {
       drawRug(
@@ -228,6 +231,8 @@ function drawCeilingAndDecor(
   theme: { accent: number; wall: number },
   deptIdx: number,
   wallClocksRef: MutableRefObject<WallClockVisual[]>,
+  cbRef: MutableRefObject<CallbackSnapshot>,
+  interactablesRef: MutableRefObject<Array<{ x: number; y: number; radius: number; onInteract: () => void }>>,
 ): void {
   drawCeilingLight(room, rx + roomW / 2, ry + 14, theme.accent);
   drawAmbientGlow(room, rx + roomW / 2, ry + roomH / 2, roomW * 0.4, theme.accent, 0.04);
@@ -242,7 +247,31 @@ function drawCeilingAndDecor(
   );
 
   drawWhiteboard(room, rx + roomW - 48, ry + 18);
+  // Add tooltip + click handler to the whiteboard
+  const wbGraphics = room.children[room.children.length - 1];
+  if (wbGraphics) {
+    const wbClick = () => cbRef.current.onInteractObject("whiteboard");
+    makeInteractive(
+      wbGraphics as Graphics,
+      "📋 Whiteboard",
+      "Click to open Task Board",
+      wbClick,
+      0xffee88,
+    );
+    interactablesRef.current.push({
+      x: rx + roomW - 48,
+      y: ry + 18,
+      radius: 48,
+      onInteract: wbClick,
+    });
+  }
+
   drawBookshelf(room, rx + 6, ry + 18);
+  const bsGraphics = room.children[room.children.length - 1];
+  if (bsGraphics) {
+    addTooltip(bsGraphics as Graphics, "📚 Bookshelf", "Knowledge base", { accentColor: 0xd4b478 });
+  }
+
   wallClocksRef.current.push(drawWallClock(room, rx + roomW - 16, ry + 12));
   drawWindow(room, rx + roomW / 2 - 12, ry + 16);
   if (roomW > 240) {
@@ -254,7 +283,15 @@ function drawCeilingAndDecor(
   }
 
   drawPlant(room, rx + 8, ry + roomH - 14, deptIdx);
+  const p1 = room.children[room.children.length - 1];
+  if (p1) {
+    addTooltip(p1 as Graphics, "🌿 Office Plant", "Brings zen vibes", { accentColor: 0x7cb898, offsetY: -28 });
+  }
   drawPlant(room, rx + roomW - 12, ry + roomH - 14, deptIdx + 1);
+  const p2 = room.children[room.children.length - 1];
+  if (p2) {
+    addTooltip(p2 as Graphics, "🌱 Office Plant", "100% maintenance-free", { accentColor: 0x7cb898, offsetY: -28 });
+  }
   drawTrashCan(room, rx + roomW - 14, ry + roomH - 26);
 }
 

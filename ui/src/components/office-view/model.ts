@@ -27,6 +27,7 @@ interface OfficeViewProps {
   themeHighlightTargetId?: string | null;
   onSelectAgent: (agent: Agent) => void;
   onSelectDepartment: (dept: Department) => void;
+  onInteractObject?: (objectType: string) => void;
 }
 
 interface Delivery {

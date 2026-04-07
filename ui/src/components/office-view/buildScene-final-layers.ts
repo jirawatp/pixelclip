@@ -3,6 +3,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { Container, Graphics, Sprite, Text, TextStyle, type Application, type Texture } from "pixi.js";
 // types omitted
 import { CEO_SIZE, DESK_H, type Delivery } from "./model";
+import { drawDayNightOverlay } from "./drawing-core";
 
 interface BuildFinalLayersParams {
   app: Application;
@@ -17,6 +18,9 @@ interface BuildFinalLayersParams {
   crownRef: MutableRefObject<Text | null>;
   prevAssignRef: MutableRefObject<Set<string>>;
   setSceneRevision: Dispatch<SetStateAction<number>>;
+  dayNightOverlayRef: MutableRefObject<Graphics | null>;
+  totalH: number;
+  officeW: number;
 }
 
 export function buildFinalLayers({
@@ -32,8 +36,13 @@ export function buildFinalLayers({
   crownRef,
   prevAssignRef,
   setSceneRevision,
+  dayNightOverlayRef,
+  totalH,
+  officeW,
 }: BuildFinalLayersParams): void {
   const deliveryLayer = new Container();
+  deliveryLayer.eventMode = "none";
+  deliveryLayer.interactiveChildren = false;
   app.stage.addChild(deliveryLayer);
   deliveryLayerRef.current = deliveryLayer;
 
@@ -43,6 +52,8 @@ export function buildFinalLayers({
   }
 
   const highlight = new Graphics();
+  highlight.eventMode = "none";
+  highlight.interactiveChildren = false;
   app.stage.addChild(highlight);
   highlightRef.current = highlight;
 
@@ -110,4 +121,8 @@ export function buildFinalLayers({
   }
 
   setSceneRevision((prev) => prev + 1);
+
+  // Day/night ambient overlay — topmost layer, updated per-frame in ticker
+  const overlay = drawDayNightOverlay(app.stage, officeW, totalH);
+  dayNightOverlayRef.current = overlay;
 }

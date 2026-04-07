@@ -2,6 +2,7 @@
 import type { MutableRefObject } from "react";
 import { Graphics, Text, TextStyle, type AnimatedSprite, type Container, type Sprite } from "pixi.js";
 // types omitted
+import { applyWallClockTime, blendColor, updateDayNightOverlay } from "./drawing-core";
 import {
   type Delivery,
   type RoomRect,
@@ -18,7 +19,6 @@ import {
   destroyNode,
   emitSubCloneFireworkBurst,
 } from "./model";
-import { applyWallClockTime, blendColor } from "./drawing-core";
 import { DEPT_THEME, DEFAULT_BREAK_THEME, DEFAULT_CEO_THEME } from "./themes-locale";
 import { updateBreakRoomAndDeliveryAnimations } from "./officeTickerRoomAndDelivery";
 
@@ -84,6 +84,7 @@ export interface OfficeTickerContext {
   totalHRef: MutableRefObject<number>;
   dataRef: MutableRefObject<OfficeTickerData>;
   followCeoInView: () => void;
+  dayNightOverlayRef: MutableRefObject<Graphics | null>;
 }
 
 export function runOfficeTickerStep(ctx: OfficeTickerContext): void {
@@ -96,6 +97,15 @@ export function runOfficeTickerStep(ctx: OfficeTickerContext): void {
   if (ctx.wallClockSecondRef.current !== wallClockSecond) {
     ctx.wallClockSecondRef.current = wallClockSecond;
     for (const clock of ctx.wallClocksRef.current) applyWallClockTime(clock, wallClockNow);
+  }
+
+  // Update day/night overlay ~every 10 seconds
+  if (tick % 600 === 0 && ctx.dayNightOverlayRef.current) {
+    updateDayNightOverlay(
+      ctx.dayNightOverlayRef.current,
+      ctx.officeWRef.current,
+      ctx.totalHRef.current,
+    );
   }
 
   if (ceo) {

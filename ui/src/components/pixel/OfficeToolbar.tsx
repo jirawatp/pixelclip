@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { PICO8 } from "@/engine/ProceduralPixelArt";
+import { isMuted, setMuted, sfxToggle } from "@/engine/PixelAudio";
 
 interface OfficeToolbarProps {
   viewMode: "office" | "list";
@@ -8,6 +10,15 @@ interface OfficeToolbarProps {
 }
 
 export function OfficeToolbar({ viewMode, onViewModeChange, companyName, agentCount }: OfficeToolbarProps) {
+  const [muted, setMutedState] = useState(isMuted());
+
+  const handleToggleMute = () => {
+    const next = !muted;
+    setMutedState(next);
+    setMuted(next);
+    if (!next) sfxToggle(); // play a sound when unmuting
+  };
+
   return (
     <div
       className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2"
@@ -27,8 +38,19 @@ export function OfficeToolbar({ viewMode, onViewModeChange, companyName, agentCo
         </span>
       </div>
 
-      {/* View toggle */}
+      {/* Controls */}
       <div className="flex items-center gap-2">
+        {/* Audio toggle */}
+        <button
+          onClick={handleToggleMute}
+          className="pixel-btn text-[7px]"
+          title={muted ? "Unmute sounds" : "Mute sounds"}
+          style={{ minWidth: 28 }}
+        >
+          {muted ? "🔇" : "🔊"}
+        </button>
+
+        {/* View toggle */}
         <button
           onClick={() => onViewModeChange("office")}
           className={`pixel-btn text-[7px] ${viewMode === "office" ? "pixel-btn-primary" : ""}`}

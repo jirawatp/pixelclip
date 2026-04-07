@@ -54,6 +54,8 @@ export function buildOfficeScene(context: BuildOfficeSceneContext): void {
     wallClocksRef,
     wallClockSecondRef,
     setSceneRevision,
+    dayNightOverlayRef,
+    interactablesRef,
   } = context;
 
   const app = appRef.current;
@@ -86,6 +88,7 @@ export function buildOfficeScene(context: BuildOfficeSceneContext): void {
   ceoOfficeRectRef.current = null;
   breakRoomRectRef.current = null;
   ceoMeetingSeatsRef.current = [];
+  interactablesRef.current = [];
 
   const {
     departments,
@@ -163,6 +166,8 @@ export function buildOfficeScene(context: BuildOfficeSceneContext): void {
     ceoMeetingSeatsRef,
     wallClocksRef,
     ceoOfficeRectRef,
+    cbRef,
+    interactablesRef,
   });
 
   buildDepartmentRooms({
@@ -193,6 +198,7 @@ export function buildOfficeScene(context: BuildOfficeSceneContext): void {
     removedSubBurstsByParent,
     addedWorkingSubIds,
     nextSubSnapshot,
+    interactablesRef,
   });
   subCloneSnapshotRef.current = nextSubSnapshot;
 
@@ -228,5 +234,8 @@ export function buildOfficeScene(context: BuildOfficeSceneContext): void {
     crownRef,
     prevAssignRef,
     setSceneRevision,
+    dayNightOverlayRef,
+    totalH,
+    officeW: OFFICE_W,
   });
 }

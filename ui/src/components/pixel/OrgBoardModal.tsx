@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { agentsApi } from "@/api/agents";
 import { queryKeys } from "@/lib/queryKeys";
 import { PICO8, AGENT_COLOR_SCHEMES } from "@/engine/ProceduralPixelArt";
+import { useDialog } from "@/context/DialogContext";
 
 interface OrgBoardModalProps {
   companyId: string;
@@ -129,6 +130,7 @@ function OrgNode({
 }
 
 export function OrgBoardModal({ companyId, onClose, onAgentClick }: OrgBoardModalProps) {
+  const { openNewAgent } = useDialog();
   const agentsQuery = useQuery({
     queryKey: queryKeys.agents.list(companyId),
     queryFn: () => agentsApi.list(companyId),
@@ -172,7 +174,7 @@ export function OrgBoardModal({ companyId, onClose, onAgentClick }: OrgBoardModa
         </div>
 
         <div className="p-3 flex gap-2 justify-end" style={{ borderTop: `2px solid ${PICO8.darkGray}` }}>
-          <button className="pixel-btn pixel-btn-primary text-[7px]">
+          <button onClick={openNewAgent} className="pixel-btn pixel-btn-primary text-[7px]">
             Hire Agent
           </button>
           <button onClick={onClose} className="pixel-btn text-[7px]">

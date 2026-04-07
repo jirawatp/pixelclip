@@ -5,6 +5,7 @@ import { activityApi } from "@/api/activity";
 import { issuesApi } from "@/api/issues";
 import { queryKeys } from "@/lib/queryKeys";
 import { PICO8, AGENT_COLOR_SCHEMES } from "@/engine/ProceduralPixelArt";
+import { sfxClick, sfxNav, sfxPause, sfxResume } from "@/engine/PixelAudio";
 
 interface AgentDetailPanelProps {
   agentId: string;
@@ -79,8 +80,10 @@ export function AgentDetailPanel({ agentId, companyId, onClose, onViewFull }: Ag
 
   const handleTogglePause = () => {
     if (agent?.status === "paused") {
+      sfxResume();
       resumeMutation.mutate();
     } else {
+      sfxPause();
       pauseMutation.mutate();
     }
   };
@@ -205,7 +208,7 @@ export function AgentDetailPanel({ agentId, companyId, onClose, onViewFull }: Ag
         {/* Actions */}
         <div className="flex gap-2 flex-wrap">
           <button
-            onClick={() => onViewFull(agentId)}
+            onClick={() => { sfxNav(); onViewFull(agentId); }}
             className="pixel-btn pixel-btn-primary text-[7px]"
           >
             Full Profile

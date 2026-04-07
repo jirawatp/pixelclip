@@ -19,6 +19,7 @@ export interface DataSnapshot {
 export interface CallbackSnapshot {
   onSelectAgent: (agent: Agent) => void;
   onSelectDepartment: (dept: Department) => void;
+  onInteractObject: (objectType: string) => void;
 }
 
 export interface AnimItem {
@@ -87,4 +88,6 @@ export interface BuildOfficeSceneContext {
   wallClocksRef: MutableRefObject<WallClockVisual[]>;
   wallClockSecondRef: MutableRefObject<number>;
   setSceneRevision: Dispatch<SetStateAction<number>>;
+  dayNightOverlayRef: MutableRefObject<Graphics | null>;
+  interactablesRef: MutableRefObject<Array<{ x: number; y: number; radius: number; onInteract: () => void }>>;
 }
