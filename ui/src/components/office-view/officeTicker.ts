@@ -222,7 +222,7 @@ export function runOfficeTickerStep(ctx: OfficeTickerContext): void {
     sprite.position.x = baseX;
     sprite.position.y = baseY;
 
-    if (status === "working") {
+    if (status === "running") {
       if (tick % 10 === 0) {
         const particle = new Graphics();
         const colors = [0x55aaff, 0x55ff88, 0xffaa33, 0xff5577, 0xaa77ff];
@@ -251,7 +251,7 @@ export function runOfficeTickerStep(ctx: OfficeTickerContext): void {
     if (cliProvider) {
       const usage = ctx.cliUsageRef.current?.[cliProvider];
       const maxUtil = usage?.windows?.reduce((max, window) => Math.max(max, window.utilization), 0) ?? 0;
-      const isOfflineAgent = status === "offline";
+      const isOfflineAgent = status === "paused" || status === "terminated" || status === "error";
 
       if (maxUtil >= 1.0) {
         const bedCenterX = baseX;

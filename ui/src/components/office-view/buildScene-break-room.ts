@@ -60,7 +60,7 @@ export function buildBreakRoom({
   wallClocksRef,
   agentPosRef,
 }: BuildBreakRoomParams): void {
-  const breakAgents = agents.filter((agent) => agent.status === "break");
+  const breakAgents = agents.filter((agent) => agent.status === "idle" || agent.status === "pending_approval");
   breakAnimItemsRef.current = [];
   breakBubblesRef.current = [];
 

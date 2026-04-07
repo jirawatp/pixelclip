@@ -168,9 +168,9 @@ export function buildDepartmentRooms({
       const arow = Math.floor(agentIdx / COLS_PER_ROW);
       const ax = rx + ROOM_PAD + acol * SLOT_W + SLOT_W / 2;
       const ay = ry + 38 + arow * SLOT_H;
-      const isWorking = agent.status === "working";
-      const isOffline = agent.status === "offline";
-      const isBreak = agent.status === "break";
+      const isWorking = agent.status === "running";
+      const isOffline = agent.status === "paused" || agent.status === "terminated" || agent.status === "error";
+      const isBreak = agent.status === "idle" || agent.status === "pending_approval";
 
       const nameY = ay;
       const charFeetY = nameY + 24 + TARGET_CHAR_H;

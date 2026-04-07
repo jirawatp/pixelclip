@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCompany } from "@/context/CompanyContext";
+import { useDialog } from "@/context/DialogContext";
 import { useNavigate } from "@/lib/router";
 import { agentsApi } from "@/api/agents";
 import { issuesApi } from "@/api/issues";
@@ -17,6 +18,7 @@ type ModalType = "org-board" | "whiteboard" | "filing-cabinet" | "control-room" 
 
 export function VirtualOffice() {
   const { selectedCompany } = useCompany();
+  const { openNewIssue } = useDialog();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"office" | "list">("office");
 
@@ -185,6 +187,7 @@ export function VirtualOffice() {
           companyId={companyId}
           onClose={handleCloseModal}
           onIssueClick={handleViewIssue}
+          onNewTask={openNewIssue}
         />
       )}
 

@@ -58,12 +58,22 @@ function PixelBarChart({ data, label }: { data: number[]; label: string }) {
 
 export function ControlRoomModal({ companyId, dashboardData, onClose }: ControlRoomModalProps) {
   const data = dashboardData ?? {};
-  const totalCost = data.totalCost ?? 0;
-  const agentCount = data.agentCount ?? 0;
-  const activeRuns = data.activeRuns ?? 0;
-  const completedTasks = data.completedTasks ?? 0;
-  const totalTasks = data.totalTasks ?? 0;
-  const dailyActivity = data.dailyActivity ?? [3, 7, 5, 12, 8, 15, 10];
+  
+  // Real stats from DashboardSummary
+  const agents = data.agents ?? { active: 0, running: 0, paused: 0, error: 0 };
+  const tasks = data.tasks ?? { open: 0, inProgress: 0, blocked: 0, done: 0 };
+  const costs = data.costs ?? { monthSpendCents: 0, monthBudgetCents: 0 };
+  
+  const totalCost = (costs.monthSpendCents / 100).toFixed(2);
+  const totalCostFloat = costs.monthSpendCents / 100;
+  const budgetUsd = costs.monthBudgetCents / 100;
+  const agentCount = agents.active + agents.running + agents.paused + agents.error;
+  const activeRuns = agents.running;
+  const completedTasks = tasks.done;
+  const totalTasks = tasks.open + tasks.inProgress + tasks.blocked + tasks.done;
+  
+  // We don't have dailyActivity from DashboardSummary yet, so mock it for visual
+  const dailyActivity = [3, 7, 5, 12, 8, 15, activeRuns * 2];
 
   return (
     <div
@@ -118,9 +128,9 @@ export function ControlRoomModal({ companyId, dashboardData, onClose }: ControlR
               />
               <PixelMeter
                 label="Budget Used"
-                value={totalCost}
-                max={1000}
-                color={totalCost > 800 ? PICO8.red : totalCost > 500 ? PICO8.orange : PICO8.blue}
+                value={totalCostFloat}
+                max={Math.max(1000, budgetUsd)}
+                color={totalCostFloat > budgetUsd * 0.8 ? PICO8.red : totalCostFloat > budgetUsd * 0.5 ? PICO8.orange : PICO8.blue}
               />
               <PixelMeter
                 label="Agent Utilization"

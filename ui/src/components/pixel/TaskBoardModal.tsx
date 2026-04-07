@@ -7,6 +7,7 @@ interface TaskBoardModalProps {
   companyId: string;
   onClose: () => void;
   onIssueClick: (issueId: string) => void;
+  onNewTask: () => void;
 }
 
 const STATUS_COLUMNS = [
@@ -29,7 +30,7 @@ function categorizeStatus(status: string): string {
   return "backlog";
 }
 
-export function TaskBoardModal({ companyId, onClose, onIssueClick }: TaskBoardModalProps) {
+export function TaskBoardModal({ companyId, onClose, onIssueClick, onNewTask }: TaskBoardModalProps) {
   const issuesQuery = useQuery({
     queryKey: queryKeys.issues.list(companyId),
     queryFn: () => issuesApi.list(companyId),
@@ -138,7 +139,7 @@ export function TaskBoardModal({ companyId, onClose, onIssueClick }: TaskBoardMo
         </div>
 
         <div className="p-3 flex gap-2 justify-end" style={{ borderTop: `2px solid ${PICO8.darkGray}` }}>
-          <button className="pixel-btn pixel-btn-success text-[7px]">
+          <button onClick={onNewTask} className="pixel-btn pixel-btn-success text-[7px]">
             New Task
           </button>
           <button onClick={onClose} className="pixel-btn text-[7px]">
